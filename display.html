@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logost.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Usuarios — Pantalla de llamados</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #display-root {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0a1628;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="display-root"></div>
+    <script type="module" src="/src/display/main-display.tsx"></script>
+  </body>
+</html>

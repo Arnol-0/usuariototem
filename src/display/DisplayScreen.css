@@ -1,0 +1,609 @@
+/* ── Root ── */
+.ds-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1e2e 100%);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Patrón de fondo sutil */
+.ds-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,201,111,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(0,120,200,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Header ── */
+.ds-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.ds-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ds-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.ds-header-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-station {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.ds-area {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+}
+
+.ds-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ds-conn-dot.on  { background: #00c96f; box-shadow: 0 0 8px rgba(0,201,111,0.6); }
+.ds-conn-dot.off { background: #ff6b6b; }
+
+.ds-conn-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+}
+
+.ds-clock-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 1px;
+  margin-left: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Body ── */
+.ds-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Columna izquierda (turno + historial) ── */
+.ds-left-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Panel principal ── */
+.ds-main-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 40px 20px;
+  gap: 16px;
+  flex: 1;
+}
+
+.ds-now-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* ── Turno actual ── */
+.ds-ticket-display {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  animation: ds-ticket-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes ds-ticket-in {
+  from { transform: scale(0.6) translateY(30px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+.ds-ticket-full {
+  font-size: clamp(100px, 18vw, 200px);
+  font-weight: 900;
+  color: #00c96f;
+  line-height: 1;
+  letter-spacing: -4px;
+  text-shadow: 0 0 60px rgba(0,201,111,0.4), 0 0 120px rgba(0,201,111,0.15);
+  animation: ds-glow 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes ds-glow {
+  from { text-shadow: 0 0 40px rgba(0,201,111,0.3), 0 0 80px rgba(0,201,111,0.1); }
+  to   { text-shadow: 0 0 80px rgba(0,201,111,0.6), 0 0 160px rgba(0,201,111,0.25); }
+}
+
+/* ── Nombre y servicio ── */
+.ds-name-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: ds-fade-up 0.5s ease 0.3s both;
+}
+
+@keyframes ds-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ds-client-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+}
+
+.ds-service-badge {
+  background: rgba(0,201,111,0.15);
+  border: 1px solid rgba(0,201,111,0.3);
+  color: #00e07a;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Estados vacío/pausa ── */
+.ds-empty-display,
+.ds-paused-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  opacity: 0.4;
+}
+
+.ds-empty-icon svg { width: 80px; height: 80px; }
+.ds-empty-text,
+.ds-paused-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+}
+.ds-paused-icon { font-size: 56px; }
+
+/* ── Historial de llamados recientes ── */
+.ds-recent-panel {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.18);
+  padding: 16px 28px;
+  flex-shrink: 0;
+}
+
+.ds-recent-title {
+  font-size: 10px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.ds-recent-list {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.ds-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px 16px;
+  min-width: 160px;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.ds-recent-row.current {
+  background: rgba(0,201,111,0.08);
+  border-color: rgba(0,201,111,0.25);
+}
+
+.ds-recent-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ds-recent-letter {
+  font-size: 18px;
+  font-weight: 900;
+  color: #00c96f;
+  line-height: 1;
+}
+
+.ds-recent-row:not(.current) .ds-recent-letter {
+  color: rgba(255,255,255,0.35);
+}
+
+.ds-recent-number {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.ds-recent-row:not(.current) .ds-recent-number {
+  color: rgba(255,255,255,0.45);
+}
+
+.ds-recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ds-recent-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.ds-recent-row:not(.current) .ds-recent-name {
+  color: rgba(255,255,255,0.35);
+}
+
+.ds-recent-service {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.ds-recent-now-dot {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00c96f;
+  box-shadow: 0 0 6px rgba(0,201,111,0.7);
+  animation: ds-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes ds-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Cola lateral ── */
+.ds-queue-panel {
+  border-left: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.ds-queue-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-queue-count {
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0;
+  font-weight: 800;
+}
+
+.ds-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.ds-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 9px 12px;
+  animation: ds-fade-up 0.4s ease both;
+  transition: background 0.2s;
+}
+.ds-queue-row:hover { background: rgba(255,255,255,0.07); }
+
+.ds-queue-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+  min-width: 52px;
+}
+
+.ds-queue-letter {
+  font-size: 12px;
+  font-weight: 900;
+  color: #00c96f;
+  line-height: 1;
+}
+
+.ds-queue-num {
+  font-size: 15px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -0.5px;
+}
+
+.ds-queue-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ds-queue-overdue {
+  font-size: 12px;
+  color: #ffb347;
+  flex-shrink: 0;
+}
+
+.ds-queue-empty {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+  font-weight: 600;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ── Footer ── */
+.ds-footer {
+  padding: 12px 32px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.25);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ── Botón config Google TTS ──────────────────────────────────────────────── */
+.ds-config-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.15);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+  line-height: 1;
+}
+.ds-config-btn:hover {
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.06);
+}
+
+/* ── Modal config ─────────────────────────────────────────────────────────── */
+.ds-config-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ds-config-modal {
+  background: #0f172a;
+  border: 1px solid rgba(99,210,130,0.3);
+  border-radius: 16px;
+  padding: 32px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.ds-config-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #63d282;
+  margin-bottom: 12px;
+}
+.ds-config-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+.ds-config-desc strong { color: rgba(255,255,255,0.8); }
+.ds-config-input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  box-sizing: border-box;
+  font-family: monospace;
+  letter-spacing: 1px;
+  transition: border 0.2s;
+}
+.ds-config-input:focus { border-color: #63d282; }
+.ds-config-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ds-config-save {
+  background: #63d282;
+  color: #0a1628;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ds-config-save:hover { background: #4ec46e; }
+.ds-config-clear {
+  background: rgba(255,80,80,0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255,80,80,0.25);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ds-config-clear:hover { background: rgba(255,80,80,0.25); }
+.ds-config-close {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.2s;
+}
+.ds-config-close:hover { background: rgba(255,255,255,0.12); }
+.ds-config-hint {
+  margin-top: 14px;
+  font-size: 12px;
+}
+.ds-config-hint a {
+  color: rgba(99,210,130,0.7);
+  text-decoration: none;
+}
+.ds-config-hint a:hover { color: #63d282; text-decoration: underline; }
+
+/* ── Secciones del modal ─────────────────────────────────────────────────── */
+.ds-config-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.ds-config-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ds-config-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.ds-config-badge.free {
+  background: rgba(99,210,130,0.2);
+  color: #63d282;
+  border: 1px solid rgba(99,210,130,0.3);
+}
+.ds-config-badge.paid {
+  background: rgba(255,200,80,0.15);
+  color: #ffc850;
+  border: 1px solid rgba(255,200,80,0.25);
+}
+.ds-config-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+}

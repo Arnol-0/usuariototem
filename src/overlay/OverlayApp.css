@@ -1,0 +1,580 @@
+.oa-root {
+  width: 100vw;
+  height: 100vh;
+  background: #f2f4f8;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.oa-topbar {
+  background: #0e0f12;
+  color: #fff;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.oa-topbar-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oa-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.oa-conn {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.oa-conn.on  { background: #00d27a; }
+.oa-conn.off { background: #555; }
+
+.oa-logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.oa-logout-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+}
+
+/* ── Modal cierre de sesión ─────────────────── */
+.oa-logout-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #fdecea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  margin-bottom: 2px;
+}
+
+.oa-logout-confirm-btn {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 0.2px;
+  transition: filter 0.12s;
+}
+.oa-logout-confirm-btn:hover { filter: brightness(0.9); }
+
+/* ── Body (scrollable si el contenido crece) */
+.oa-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Tarjeta turno actual ──────────────────── */
+.oa-current {
+  background: #fff;
+  border-radius: 18px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(10, 20, 40, 0.07);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+  flex-shrink: 0;
+}
+
+.oa-current.paused {
+  border-color: rgba(230, 126, 34, 0.3);
+}
+
+.oa-live-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.oa-live-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  background: #e8fff3;
+  color: #00a85c;
+  border: 1px solid rgba(0, 185, 107, 0.22);
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.8px;
+}
+
+.oa-live-pill.paused {
+  background: #fff5e9;
+  color: #d16b00;
+  border-color: rgba(230, 126, 34, 0.28);
+}
+
+.oa-current-number {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: -2.5px;
+  text-align: center;
+  line-height: 1;
+  color: #0d1117;
+}
+
+.oa-current-name {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7585;
+  font-weight: 600;
+}
+
+.oa-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.oa-metric {
+  background: #f6f8fb;
+  border: 1px solid rgba(10, 20, 40, 0.06);
+  border-radius: 12px;
+  padding: 7px 6px 6px;
+  text-align: center;
+}
+
+.oa-metric-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #9aa3b2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.oa-metric-value {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #1b2430;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.oa-metric-value.duration { color: #00a85c; }
+
+.oa-empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #9aa3b2;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ── Vista pausada dentro de la tarjeta ──── */
+.oa-paused-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0 6px;
+  gap: 4px;
+}
+
+.oa-paused-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.oa-paused-icon--bathroom { background: #d6e9ff; }
+.oa-paused-icon--lunch    { background: #ffe8ba; }
+
+.oa-paused-label {
+  font-size: 17px;
+  font-weight: 900;
+  color: #0d1117;
+  letter-spacing: -0.3px;
+}
+
+.oa-paused-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d16b00;
+}
+
+/* ── Grid acciones — 2 arriba, 1 centrado abajo ──── */
+.oa-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* El botón de pausa/reanudar ocupa toda la fila inferior */
+.oa-card-btn--wide {
+  grid-column: 1 / -1;
+  min-height: 60px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+}
+.oa-card-btn--wide .oa-card-icon {
+  width: 34px;
+  height: 34px;
+}
+.oa-card-btn--wide .oa-card-label {
+  font-size: 11px;
+}
+
+.oa-card-btn {
+  border-radius: 16px;
+  padding: 12px 8px 10px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.08s ease, filter 0.1s ease;
+  min-height: 74px;
+}
+.oa-card-btn:hover:not(:disabled) { filter: brightness(0.96); }
+.oa-card-btn:active:not(:disabled) { transform: scale(0.97); }
+.oa-card-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.oa-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.oa-card-label {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+/* Siguiente — verde fuerte */
+.oa-card-btn.next { background: #00c96f; color: #052e18; }
+.oa-card-btn.next .oa-card-icon { background: rgba(255,255,255,0.28); color: #fff; }
+
+/* Recall — verde menta claro */
+.oa-card-btn.recall { background: #d4f5e5; color: #0a4a2a; }
+.oa-card-btn.recall .oa-card-icon { background: rgba(255,255,255,0.55); color: #00904d; }
+
+/* Pausar — verde salvia suave */
+.oa-card-btn.pause { background: #e6f7ee; color: #1a4a30; }
+.oa-card-btn.pause .oa-card-icon { background: rgba(255,255,255,0.6); color: #00a85c; }
+
+/* ── Aviso sin comentario ──────────────────── */
+.oa-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff6e0;
+  border: 1.5px solid rgba(210, 140, 0, 0.3);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #7a4d00;
+  animation: oa-warn-in 0.2s ease;
+  flex-shrink: 0;
+}
+.oa-warn svg { flex-shrink: 0; color: #d48000; }
+.oa-warn strong { color: #c07000; }
+
+@keyframes oa-warn-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Spinners ──────────────────────────────── */
+.oa-spin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  animation: oa-spin 0.55s linear infinite;
+  display: inline-block;
+}
+.oa-spin.recall-spin { border-top-color: #00904d; border-color: rgba(0,0,0,0.10); }
+.oa-spin.pause-spin  { border-top-color: #00a85c; border-color: rgba(0,0,0,0.10); }
+
+@keyframes oa-spin { to { transform: rotate(360deg); } }
+
+/* ── Próximos ──────────────────────────────── */
+.oa-next {
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px 10px 8px;
+  border: 1px solid rgba(10, 20, 40, 0.07);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.oa-next-title {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #9aa3b2;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.oa-next-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.oa-next-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: #f6f8fb;
+}
+
+.oa-next-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.oa-next-num {
+  font-weight: 900;
+  color: #00a85c;
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
+}
+
+.oa-next-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1b2430;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.oa-next-service {
+  font-size: 10px;
+  color: #9aa3b2;
+  font-weight: 600;
+}
+
+.oa-next-wait {
+  font-size: 10.5px;
+  color: #8a93a3;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.oa-next-wait.overdue { color: #e03e3e; }
+
+/* ── Comentario ────────────────────────────── */
+.oa-comment {
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px 10px 10px;
+  border: 1px solid rgba(10, 20, 40, 0.07);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.oa-comment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.oa-comment-icon {
+  width: 18px;
+  height: 18px;
+  color: #9aa3b2;
+  flex-shrink: 0;
+}
+
+.oa-comment-label {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #9aa3b2;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.oa-comment-input {
+  width: 100%;
+  border: 1.5px solid rgba(10, 20, 40, 0.09);
+  border-radius: 12px;
+  padding: 9px 10px;
+  font-size: 12px;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  background: #f8f9fc;
+  color: #1b2430;
+  line-height: 1.5;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.oa-comment-input:focus {
+  border-color: rgba(0, 185, 107, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 185, 107, 0.10);
+  background: #fff;
+}
+.oa-comment-input::placeholder { color: #b0b8c6; }
+.oa-comment-input:disabled { opacity: 0.55; }
+
+.oa-comment-hint {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #9aa3b2;
+  font-weight: 600;
+}
+.oa-comment-hint strong { color: #00a85c; }
+
+/* ── Modal motivo de pausa ─────────────────── */
+.oa-pause-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: oa-backdrop-in 0.18s ease;
+}
+
+@keyframes oa-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.oa-pause-modal {
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  padding: 20px 16px 24px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: oa-modal-up 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes oa-modal-up {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.oa-pause-modal-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #0d1117;
+  text-align: center;
+}
+
+.oa-pause-modal-sub {
+  font-size: 11.5px;
+  color: #8a93a3;
+  font-weight: 600;
+  text-align: center;
+  margin-top: -4px;
+  margin-bottom: 2px;
+}
+.oa-pause-modal-sub strong { color: #1b2430; }
+
+.oa-pause-opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.08s, filter 0.1s;
+}
+.oa-pause-opt:hover { filter: brightness(0.96); }
+.oa-pause-opt:active { transform: scale(0.98); }
+
+.oa-pause-opt.bathroom { background: #eef6ff; }
+.oa-pause-opt.lunch    { background: #fff7e8; }
+
+.oa-pause-opt-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.oa-pause-opt.bathroom .oa-pause-opt-icon { background: #d6e9ff; }
+.oa-pause-opt.lunch    .oa-pause-opt-icon { background: #ffe8ba; }
+
+.oa-pause-opt-label {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0d1117;
+}
+.oa-pause-opt.bathroom .oa-pause-opt-label { color: #1a3b6e; }
+.oa-pause-opt.lunch    .oa-pause-opt-label { color: #6b3c00; }
+
+.oa-pause-opt-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa3b2;
+  margin-top: 1px;
+}
+
+.oa-pause-cancel {
+  background: none;
+  border: 1.5px solid rgba(10, 20, 40, 0.10);
+  border-radius: 12px;
+  color: #6b7585;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+  width: 100%;
+  transition: background 0.12s, color 0.12s;
+}
+.oa-pause-cancel:hover { background: #f4f5f7; color: #1b2430; }
