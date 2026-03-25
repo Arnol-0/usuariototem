@@ -22,12 +22,12 @@ function openDisplay() {
 export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Modal PIN pantalla de llamados
-  const [showPin, setShowPin]   = useState(false);
-  const [pin, setPin]           = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState(false);
 
   function handlePinKey(digit: string) {
@@ -136,7 +136,7 @@ export default function Login({ onLogin }: LoginProps) {
           {error && (
             <div className="login-error">
               <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-5.25a.75.75 0 001.5 0v-4a.75.75 0 00-1.5 0v4zm.75 2.5a1 1 0 110-2 1 1 0 010 2z" clipRule="evenodd"/>
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-5.25a.75.75 0 001.5 0v-4a.75.75 0 00-1.5 0v4zm.75 2.5a1 1 0 110-2 1 1 0 010 2z" clipRule="evenodd" />
               </svg>
               {error}
             </div>
@@ -149,7 +149,7 @@ export default function Login({ onLogin }: LoginProps) {
               <>
                 <span>Iniciar sesión</span>
                 <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                  <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
                 </svg>
               </>
             )}
@@ -162,7 +162,7 @@ export default function Login({ onLogin }: LoginProps) {
       {/* Botón pantalla de llamados — esquina inferior izquierda, discreto */}
       <button className="login-display-btn" onClick={() => { setShowPin(true); setPin(''); setPinError(false); }} type="button" title="Abrir pantalla de llamados">
         <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-          <path fillRule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15h-3.105a3.501 3.501 0 001.1 1.677A.75.75 0 0113.26 18H6.74a.75.75 0 01-.484-1.323A3.501 3.501 0 007.355 15H4.25A2.25 2.25 0 012 12.75v-8.5zm1.5 0a.75.75 0 01.75-.75h11.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H4.25a.75.75 0 01-.75-.75v-7.5z" clipRule="evenodd"/>
+          <path fillRule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15h-3.105a3.501 3.501 0 001.1 1.677A.75.75 0 0113.26 18H6.74a.75.75 0 01-.484-1.323A3.501 3.501 0 007.355 15H4.25A2.25 2.25 0 012 12.75v-8.5zm1.5 0a.75.75 0 01.75-.75h11.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H4.25a.75.75 0 01-.75-.75v-7.5z" clipRule="evenodd" />
         </svg>
       </button>
 
@@ -175,7 +175,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             {/* Indicadores de dígitos */}
             <div className={`pin-dots ${pinError ? 'pin-dots--error' : ''}`}>
-              {[0,1,2,3].map(i => (
+              {[0, 1, 2, 3].map(i => (
                 <span key={i} className={`pin-dot ${pin.length > i ? 'filled' : ''} ${pinError ? 'error' : ''}`} />
               ))}
             </div>
@@ -183,7 +183,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             {/* Teclado numérico */}
             <div className="pin-keyboard">
-              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k, i) => (
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k, i) => (
                 <button
                   key={i}
                   className={`pin-key ${k === '' ? 'pin-key--empty' : ''} ${k === '⌫' ? 'pin-key--back' : ''}`}

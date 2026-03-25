@@ -26,7 +26,11 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.18.7",
     "firebase": "^12.10.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

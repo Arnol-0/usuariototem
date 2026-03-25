@@ -305,10 +305,12 @@
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 .adm-card-header {
+  position: relative;
+  z-index: 10;
   padding: 18px 22px 14px;
   display: flex;
   align-items: flex-start;
@@ -631,6 +633,9 @@
 .adm-stats-row.triple {
   grid-template-columns: repeat(3, 1fr);
 }
+.adm-stats-row.quad {
+  grid-template-columns: repeat(4, 1fr);
+}
 .adm-kpi-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -686,8 +691,8 @@
 .adm-pie-wrap {
   display: flex;
   align-items: center;
-  gap: 40px;
-  padding: 28px 32px;
+  gap: 16px;
+  padding: 20px;
 }
 .adm-pie-svg {
   flex-shrink: 0;
@@ -828,7 +833,7 @@
   letter-spacing: 0.3px;
 }
 .adm-status-badge.status-resuelto   { background: #f0fdf4; color: #16a34a; }
-.adm-status-badge.status-redirigido { background: #fff7ed; color: #c2410c; }
+.adm-status-badge.status-no_resuelto { background: #fee2e2; color: #b91c1c; }
 .adm-status-badge.status-pendiente  { background: #fefce8; color: #a16207; }
 
 /* ── Animación entrada ────────────────────────────────────────────────── */
@@ -1168,3 +1173,170 @@
   margin-right: 2px;
 }
 
+/* Panel de Filtros Avanzados - Dropdown */
+.adm-filters-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 300px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 100;
+}
+.adm-filters-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.adm-filters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px;
+}
+/* Custom Select UI */
+.adm-custom-select {
+  position: relative;
+  width: 100%;
+}
+.adm-custom-select.active {
+  z-index: 130;
+}
+.adm-custom-select-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  background: #f8fafc;
+  outline: none;
+  cursor: pointer;
+  transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+  text-align: left;
+}
+.adm-custom-select-btn:hover {
+  background: #f1f5f9;
+}
+.adm-custom-select-btn.focus {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.adm-custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 120;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.adm-custom-select-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.adm-custom-select-item {
+  padding: 8px 12px;
+  font-size: 13.5px;
+  color: #334155;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.adm-custom-select-item:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+.adm-custom-select-item.selected {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+
+}
+
+/* Export Menu Dropdown */
+.adm-export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 6px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.adm-export-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.adm-export-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.adm-export-option:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+.adm-filters-footer {
+  padding: 0 20px 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.adm-action-btn.active {
+  background: #f1f5f9;
+  color: #111827;
+  border-color: #cbd5e1;
+}
+.adm-filter-dot {
+  width: 6px;
+  height: 6px;
+  background: #3b82f6;
+  border-radius: 50%;
+  margin-left: 4px;
+}
+

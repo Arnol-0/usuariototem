@@ -16,7 +16,7 @@ import {
 //   state/{stationId}  → ticket actual + info de estación (uno por puesto)
 //   queue/             → documentos de cola (uno por turno)
 
-const QUEUE_COL  = collection(db, 'queue');
+const QUEUE_COL = collection(db, 'queue');
 
 /** Devuelve el doc de estado propio del puesto actual. */
 function stateDoc() { return doc(db, 'state', _station.id); }
@@ -69,8 +69,8 @@ function startListeners() {
         currentTicket: Ticket | null;
         station: Station;
       };
-      _current  = data.currentTicket ?? null;
-      _station  = data.station ?? _station;
+      _current = data.currentTicket ?? null;
+      _station = data.station ?? _station;
     } else {
       _current = null;
     }
@@ -103,7 +103,7 @@ setInterval(() => {
     _current = { ..._current, duration: _current.duration + 1 };
     changed = true;
     if (_current.duration % 5 === 0) {
-      updateDoc(stateDoc(), { 'currentTicket.duration': _current.duration }).catch(() => {});
+      updateDoc(stateDoc(), { 'currentTicket.duration': _current.duration }).catch(() => { });
     }
   }
 
@@ -159,9 +159,9 @@ export async function setOperatorName(operatorId: string): Promise<void> {
     const stationId = stSnap.docs[0].id;
     const labels: string[] = st.labels ?? [];
     _station = {
-      id:       stationId,
-      name:     `${displayName} — ${st.name}`,
-      area:     labels.join(', '),
+      id: stationId,
+      name: `${displayName} — ${st.name}`,
+      area: labels.join(', '),
       isActive: true,
     };
     // Reinicia listeners apuntando al doc propio de este puesto
@@ -225,19 +225,19 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
         const t = _current as Ticket & { _codServicio?: string; _rtdbIdx?: number };
         // Guarda en Firestore `tickets` como "skipped"
         addDoc(collection(db, 'tickets'), {
-          letter:     _current.number?.charAt(0) ?? '',
-          number:     _current.number,
-          service:    _current.service,
-          rut:        _current.name,
-          issuedAt:   null,
-          calledAt:   new Date(),
+          letter: _current.number?.charAt(0) ?? '',
+          number: _current.number,
+          service: _current.service,
+          rut: _current.name,
+          issuedAt: null,
+          calledAt: new Date(),
           finishedAt: new Date(),
-          status:     'skipped',
+          status: 'skipped',
           skipReason: payload.skipReason ?? 'other',
-          comment:    payload.comment   ?? '',
-          stationId:  _station.id,
+          comment: payload.comment ?? '',
+          stationId: _station.id,
           operatorId: getBridgeConfig().operatorId,
-          waitSec:    _current.waitingTime,
+          waitSec: _current.waitingTime,
         }).catch(console.error);
         // Notifica al RTDB que este turno fue descartado
         if (t._codServicio && t._rtdbIdx !== undefined) {
@@ -262,8 +262,8 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       const { entry, docId } = claimed;
       const next: Ticket = {
         ...entry.ticket,
-        status:      'in_progress',
-        duration:    0,
+        status: 'in_progress',
+        duration: 0,
         pauseReason: null,
       };
 
@@ -285,7 +285,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       // Anuncia el nuevo turno para TTS en overlay/display
       try {
         new BroadcastChannel('totem_announce').postMessage({
-          number:  next.number,
+          number: next.number,
           station: _station.name,
         });
       } catch { /* sin BroadcastChannel */ }
@@ -295,16 +295,16 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
     case 'recall':
       if (_current) {
         await updateDoc(stateDoc(), {
-          'currentTicket.status':      'in_progress',
-          'currentTicket.duration':    0,
+          'currentTicket.status': 'in_progress',
+          'currentTicket.duration': 0,
           'currentTicket.pauseReason': null,
         });
         // Anuncia de nuevo para TTS
         try {
           new BroadcastChannel('totem_announce').postMessage({
-            number:  _current.number,
+            number: _current.number,
             station: _station.name,
-            recall:  true,
+            recall: true,
           });
         } catch { /* sin BroadcastChannel */ }
       }
@@ -313,7 +313,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
     case 'pause':
       if (_current) {
         await updateDoc(stateDoc(), {
-          'currentTicket.status':      'paused',
+          'currentTicket.status': 'paused',
           'currentTicket.pauseReason': payload.pauseReason ?? null,
         });
       }
@@ -324,7 +324,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       if (_current) {
         const t = _current as Ticket & {
           _codServicio?: string;
-          _rtdbIdx?:     number;
+          _rtdbIdx?: number;
         };
         if (t._codServicio && t._rtdbIdx !== undefined) {
           const rtdbSnap = await get(getRtdbTicketRef(t._codServicio, t._rtdbIdx));
@@ -352,8 +352,8 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       const { entry: nextEntry, docId: nextDocId } = claimedAfterFinish;
       const nextTicket: Ticket = {
         ...nextEntry.ticket,
-        status:      'in_progress',
-        duration:    0,
+        status: 'in_progress',
+        duration: 0,
         pauseReason: null,
       };
 
@@ -373,7 +373,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
 
       try {
         new BroadcastChannel('totem_announce').postMessage({
-          number:  nextTicket.number,
+          number: nextTicket.number,
           station: _station.name,
         });
       } catch { /* sin BroadcastChannel */ }

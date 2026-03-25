@@ -58,6 +58,7 @@ export interface TicketStatRow {
   total: number;       // tickets emitidos
   attended: number;    // tickets atendidos (status finished/completed)
   pending: number;     // en cola o en progreso
+  unattended: number;  // tickets que no se presentaron o fueron saltados (status skipped)
   avgWaitSec: number;  // tiempo promedio de espera en segundos
 }
 
@@ -70,7 +71,7 @@ export interface TicketRecord {
   issuedAt: number;     // timestamp ms cuando fue emitido
   calledAt: number | null;
   finishedAt: number | null;
-  status: 'waiting' | 'in_progress' | 'finished' | 'transferred';
+  status: 'waiting' | 'in_progress' | 'finished' | 'transferred' | 'skipped';
   stationId: string | null;
   operatorId: string | null;
   waitSec: number | null;  // segundos de espera real
@@ -235,17 +236,19 @@ export async function getTicketStats(
  * Agrupa un array de TicketRecord por letra y calcula totales y promedios.
  */
 export function groupStatsByLetter(tickets: TicketRecord[]): TicketStatRow[] {
-  const map = new Map<string, { service: string; total: number; attended: number; pending: number; waitSecs: number[] }>();
+  const map = new Map<string, { service: string; total: number; attended: number; pending: number; unattended: number; waitSecs: number[] }>();
 
   for (const t of tickets) {
     const key = t.letter.toUpperCase();
     if (!map.has(key)) {
-      map.set(key, { service: t.service, total: 0, attended: 0, pending: 0, waitSecs: [] });
+      map.set(key, { service: t.service, total: 0, attended: 0, pending: 0, unattended: 0, waitSecs: [] });
     }
     const row = map.get(key)!;
     row.total++;
     if (t.status === 'finished' || t.status === 'transferred') {
       row.attended++;
+    } else if (t.status === 'skipped') {
+      row.unattended++;
     } else {
       row.pending++;
     }
@@ -262,6 +265,7 @@ export function groupStatsByLetter(tickets: TicketRecord[]): TicketStatRow[] {
       total:      row.total,
       attended:   row.attended,
       pending:    row.pending,
+      unattended: row.unattended,
       avgWaitSec: row.waitSecs.length
         ? Math.round(row.waitSecs.reduce((s, v) => s + v, 0) / row.waitSecs.length)
         : 0,
@@ -273,13 +277,46 @@ export function groupStatsByLetter(tickets: TicketRecord[]): TicketStatRow[] {
 export async function getAllComments() {
   const { listComments } = await import('./commentStore');
   const stored = await listComments();
-  return stored
-    .map(s => ({
+
+  // Buscar también los tickets descartados ("no_show" u "other")
+  const snap = await getDocs(query(collection(db, 'tickets'), where('status', '==', 'skipped')));
+  
+  const skipped = snap.docs.map(d => {
+    const t = d.data();
+    return {
+      ticketId: d.id,
+      ticketNumber: t.number || '',
+      comment: t.comment || (t.skipReason === 'no_show' ? 'No se presentó' : 'Otro motivo (Saltado)'),
+      operatorId: t.operatorId || '',
+      operatorName: t.operatorId || 'Sin nombre',
+      createdAt: t.calledAt?.toMillis?.() || t.calledAt || Date.now(),
+      updatedAt: t.finishedAt?.toMillis?.() || t.finishedAt || Date.now(),
+      status: 'NO RESUELTO',
+    };
+  });
+
+  const merged = [
+    ...stored.map(s => ({
       ...s,
       operatorName: s.operatorName || 'Sin nombre',
       operatorId:   s.operatorId   || '',
       status: 'RESUELTO',
-    }))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    })),
+    ...skipped
+  ];
+
+  // Desduplicar por número de ticket, dando prioridad al estado no resuelto si hay colisión
+  const dedup = new Map();
+  for (const item of merged) {
+    if (item.status === 'NO RESUELTO') {
+      dedup.set(item.ticketNumber, item);
+    } else {
+      if (!dedup.has(item.ticketNumber)) {
+        dedup.set(item.ticketNumber, item);
+      }
+    }
+  }
+
+  return Array.from(dedup.values()).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 

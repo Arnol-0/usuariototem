@@ -117,12 +117,18 @@ export default function ActionButtons({ isPaused, onResume, onResumed }: ActionB
       {/* Grid principal — 3 columnas */}
       <div className="ab-grid">
 
-        {/* Siguiente — abre modal de motivo */}
+        {/* Siguiente / Iniciar turno */}
         <button className="ab-btn ab-next"
-          onClick={() => setShowNextModal(true)}
+          onClick={() => {
+            if (!ticket) {
+              actNext('other');
+            } else {
+              setShowNextModal(true);
+            }
+          }}
           disabled={!!loading}>
           {loading === 'next' ? <span className="ab-spinner" /> : <SkipForward size={22} strokeWidth={2} />}
-          <span>Siguiente</span>
+          <span>{ticket ? 'Siguiente' : 'Iniciar turno'}</span>
         </button>
 
         {/* Recall */}

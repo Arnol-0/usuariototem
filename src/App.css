@@ -180,3 +180,40 @@ html, body, #root {
   from { transform: scale(1)    translateY(0);     opacity: 1; }
   to   { transform: scale(1.04) translateY(-20px); opacity: 0; }
 }
+
+/* ── Pantalla de Carga Lottie ── */
+.lottie-overlay {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+.lottie-overlay.exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+.lottie-container {
+  width: 320px;
+  height: 320px;
+  margin-bottom: 20px;
+}
+.lottie-welcome {
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.lottie-sub {
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: center;
+}
