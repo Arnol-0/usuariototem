@@ -85,7 +85,9 @@ function playChime(): Promise<void> {
 
 // "Sarah" — voz femenina ElevenLabs, español neutro latino, muy clara
 const ELEVENLABS_VOICE_ID_DEFAULT = 'EXAVITQu4vr4xnSDxMaL';
-const ELEVENLABS_KEY_DEFAULT      = 'sk_5e9c5906dac6fd3d036d416cb114cc0e17dbca0c01f77827';
+// Nunca hardcodear keys reales en el repo.
+// Puedes setearla en `.env` como VITE_ELEVENLABS_KEY o en el panel ⚙ (localStorage).
+const ELEVENLABS_KEY_DEFAULT      = (import.meta as any).env?.VITE_ELEVENLABS_KEY || '';
 
 async function speakNeural(text: string): Promise<void> {
   const elKey   = localStorage.getItem('elevenlabs_key')   || ELEVENLABS_KEY_DEFAULT;
