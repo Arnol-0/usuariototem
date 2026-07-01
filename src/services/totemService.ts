@@ -193,7 +193,8 @@ async function claimNextTicket(): Promise<{ entry: QueueEntry; docId: string } |
   
   const target = _queue.find(e => {
     if (e._claiming) return false;
-    const letter = e._letra || e.ticket.number.charAt(0).toUpperCase();
+    const m = e.ticket.number.match(/^([A-Za-z]+)/);
+    const letter = m ? m[1].toUpperCase() : '';
     return labels.length === 0 || labels.includes(letter);
   });
 

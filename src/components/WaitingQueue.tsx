@@ -27,7 +27,11 @@ export default function WaitingQueue() {
   const labels = station.area ? station.area.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [];
   
   const filteredQueue = labels.length > 0 
-    ? queue.filter(e => labels.includes(e._letra || e.ticket.number.charAt(0).toUpperCase()))
+    ? queue.filter(e => {
+        const m = e.ticket.number.match(/^([A-Za-z]+)/);
+        const letter = m ? m[1].toUpperCase() : '';
+        return labels.includes(letter);
+    })
     : queue;
 
   const filteredTotal = filteredQueue.length;
