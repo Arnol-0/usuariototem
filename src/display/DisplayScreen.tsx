@@ -336,8 +336,8 @@ export default function DisplayScreen() {
         <div className="ds-header-left">
           <img src="/logost.png" alt="logo" className="ds-logo" />
           <div className="ds-header-title">
-            <span className="ds-station">{state.station.name || 'TotemDesk'}</span>
-            <span className="ds-area">{state.station.area || 'Sistema de atención'}</span>
+            <span className="ds-station">Atención a Pacientes</span>
+            <span className="ds-area">Sistema de turnos</span>
           </div>
         </div>
         <div className="ds-header-right">
