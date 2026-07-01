@@ -103,6 +103,8 @@ async function speakNeural(text: string): Promise<void> {
   await speakBrowser(text);
 }
 
+let currentNeuralAudio: HTMLAudioElement | null = null;
+
 // ── ElevenLabs TTS ────────────────────────────────────────────────────────────
 async function speakElevenLabs(text: string, key: string, voiceId: string): Promise<boolean> {
   try {
@@ -129,8 +131,15 @@ async function speakElevenLabs(text: string, key: string, voiceId: string): Prom
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     window.speechSynthesis?.cancel();
+    
+    if (currentNeuralAudio) {
+      currentNeuralAudio.pause();
+      currentNeuralAudio = null;
+    }
+    
     return new Promise<boolean>(resolve => {
       const audio = new Audio(url);
+      currentNeuralAudio = audio;
       audio.volume = 1;
       audio.onended = () => { URL.revokeObjectURL(url); resolve(true); };
       audio.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
@@ -194,7 +203,7 @@ export default function DisplayScreen() {
   const [animKey, setAnimKey] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [recentCalls, setRecentCalls] = useState<Array<{ id: string; letter: string; number: string; name: string; service: string }>>([]);
+  const [recentCalls, setRecentCalls] = useState<Array<{ id: string; letter: string; number: string; name: string; service: string; stationName?: string }>>([]);
 
   // Campos del modal de config
   const [elKey,   setElKey]   = useState(() => localStorage.getItem('elevenlabs_key')   || '');
@@ -203,42 +212,7 @@ export default function DisplayScreen() {
   const isInitialLoad = useRef(true);
   const stationsUpdateRef = useRef<Record<string, number>>({});
   
-  const queueLoopActive = useRef(false);
-  const announcementsQueue = useRef<{ ticket: Ticket; station: Station }[]>([]);
   const latestGlobalState = useRef<{ ticket: Ticket | null; station: Station | null }>({ ticket: null, station: null });
-
-  const processQueue = async () => {
-    if (queueLoopActive.current) return;
-    queueLoopActive.current = true;
-
-    while (announcementsQueue.current.length > 0) {
-      const ann = announcementsQueue.current[0];
-      const ticket = ann.ticket;
-      const station = ann.station;
-
-      setState(prev => ({ ...prev, currentTicket: ticket, station: station }));
-      setAnimKey(k => k + 1);
-
-      const [l, n] = splitTicketNumber(ticket.number);
-      setRecentCalls(prev => [
-        { id: ticket.id, letter: l, number: n, name: ticket.name, service: ticket.service },
-        ...prev.filter(r => r.id !== ticket.id).slice(0, 4),
-      ]);
-
-      await playChime();
-      await speakNeural(buildSpeechText(ticket, station.name.split(' — ').pop() || station.name));
-
-      announcementsQueue.current.shift();
-    }
-
-    setState(prev => ({
-      ...prev, 
-      currentTicket: latestGlobalState.current.ticket, 
-      station: latestGlobalState.current.station || prev.station 
-    }));
-
-    queueLoopActive.current = false;
-  };
 
   useEffect(() => {
     const qQueue = query(collection(db, 'queue'), orderBy('position', 'asc'));
@@ -288,9 +262,33 @@ export default function DisplayScreen() {
         setState(prev => ({ ...prev, currentTicket: latestTicket, station: latestStation, isConnected: true }));
       } else {
         if (newAnnouncements.length > 0) {
-          announcementsQueue.current.push(...newAnnouncements);
-          processQueue();
-        } else if (!queueLoopActive.current) {
+          const latestAnn = newAnnouncements[newAnnouncements.length - 1];
+          setState(prev => ({ ...prev, currentTicket: latestAnn.ticket, station: latestAnn.station, isConnected: true }));
+          setAnimKey(k => k + 1);
+
+          setRecentCalls(prev => {
+            let nextRecent = [...prev];
+            for (const ann of newAnnouncements) {
+              const [l, n] = splitTicketNumber(ann.ticket.number);
+              nextRecent = [
+                { 
+                  id: ann.ticket.id, 
+                  letter: l, 
+                  number: n, 
+                  name: ann.ticket.name, 
+                  service: ann.ticket.service || '', 
+                  stationName: ann.station.name.split(' — ').pop() || ann.station.name 
+                },
+                ...nextRecent.filter(r => r.id !== ann.ticket.id)
+              ];
+            }
+            return nextRecent.slice(0, 4);
+          });
+
+          playChime().then(() => {
+            speakNeural(buildSpeechText(latestAnn.ticket, latestAnn.station.name.split(' — ').pop() || latestAnn.station.name));
+          });
+        } else {
           setState(prev => ({ ...prev, currentTicket: latestTicket, station: latestStation, isConnected: true }));
         }
       }
@@ -373,7 +371,7 @@ export default function DisplayScreen() {
                       <span className="ds-recent-number">{call.number}</span>
                     </div>
                     <div className="ds-recent-info">
-                      <span className="ds-recent-name">{call.name}</span>
+                      <span className="ds-recent-name">{call.stationName || call.name}</span>
                       <span className="ds-recent-service">{call.service}</span>
                     </div>
                     {i === 0 && <span className="ds-recent-now-dot" />}
