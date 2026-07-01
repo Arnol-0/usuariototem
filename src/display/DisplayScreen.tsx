@@ -366,7 +366,7 @@ export default function DisplayScreen() {
               </div>
             ) : (
               <div className="ds-empty-display">
-                {/* Vacío hasta que aparezca un turno */}
+                <div className="ds-empty-text">No hay turnos ahora</div>
               </div>
             )}
 
