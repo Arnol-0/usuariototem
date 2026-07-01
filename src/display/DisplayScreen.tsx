@@ -336,7 +336,7 @@ export default function DisplayScreen() {
         <div className="ds-header-left">
           <img src="/logost.png" alt="logo" className="ds-logo" />
           <div className="ds-header-title">
-            <span className="ds-station">Atención a Pacientes</span>
+            <span className="ds-station">Atención al Usuario</span>
             <span className="ds-area">Sistema de turnos</span>
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function DisplayScreen() {
 
           {/* Turno activo */}
           <div className="ds-main-panel">
-            <div className="ds-now-label">ATENDIENDO AHORA</div>
+            {(isActive || isPaused) && <div className="ds-now-label">ATENDIENDO AHORA</div>}
 
             {isActive ? (
               <div className="ds-ticket-display" key={animKey}>
@@ -366,13 +366,7 @@ export default function DisplayScreen() {
               </div>
             ) : (
               <div className="ds-empty-display">
-                <div className="ds-empty-icon">
-                  <svg viewBox="0 0 64 64" fill="none">
-                    <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.15)" strokeWidth="2"/>
-                    <path d="M22 32h20M32 22l10 10-10 10" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <div className="ds-empty-text">Esperando turno…</div>
+                {/* Vacío hasta que aparezca un turno */}
               </div>
             )}
 
