@@ -1,5 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react';
-import type { TotemState, Ticket } from '@/types/totem';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import type { TotemState, Ticket, QueueEntry, Station } from '../types/totem';
 import './DisplayScreen.css';
 
 const EMPTY: TotemState = {
@@ -181,7 +183,9 @@ function buildSpeechText(ticket: Ticket, stationName: string): string {
 }
 
 export default function DisplayScreen() {
-  const [state, setState] = useReducer((_: TotemState, s: TotemState) => s, EMPTY);
+  const [state, setState] = useReducer((prev: TotemState, action: TotemState | ((p: TotemState) => TotemState)) => {
+    return typeof action === 'function' ? action(prev) : action;
+  }, EMPTY);
   const [connected, setConnected] = useState(false);
   const [animKey, setAnimKey] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
@@ -193,47 +197,57 @@ export default function DisplayScreen() {
   const [elVoice, setElVoice] = useState(() => localStorage.getItem('elevenlabs_voice') || ELEVENLABS_VOICE_ID_DEFAULT);
 
   const prevTicketId = useRef<string | null>(null);
+  const prevUpdateRef = useRef<number | null>(null);
 
   useEffect(() => {
-    window.speechSynthesis?.getVoices();
-    window.speechSynthesis?.addEventListener('voiceschanged', () => {});
+    const qQueue = query(collection(db, 'queue'), orderBy('position', 'asc'));
+    const unsubQueue = onSnapshot(qQueue, (snap) => {
+      const queueData = snap.docs.map(d => d.data() as QueueEntry);
+      setState(prev => ({
+        ...prev,
+        queue: queueData,
+        totalInQueue: queueData.length,
+        isConnected: true
+      }));
+    });
+
+    const unsubState = onSnapshot(collection(db, 'state'), (snap) => {
+      const stationsData = snap.docs.map(d => d.data() as { currentTicket: Ticket | null, station: Station });
+      
+      let latestTicket: Ticket | null = null;
+      let latestStation: Station = { id: '', name: 'TotemDesk', area: '', isActive: false };
+      
+      for (const st of stationsData) {
+        const t = st.currentTicket;
+        if (t && t.status === 'in_progress') {
+          if (!latestTicket || (t.updatedAt && latestTicket.updatedAt && t.updatedAt > latestTicket.updatedAt)) {
+            latestTicket = t;
+            latestStation = st.station;
+          }
+        }
+      }
+
+      setState(prev => ({
+        ...prev,
+        currentTicket: latestTicket,
+        station: latestStation,
+        isConnected: true
+      }));
+    });
+
+    return () => { unsubQueue(); unsubState(); };
   }, []);
 
-  useEffect(() => {
-    const bc = new BroadcastChannel('totem_state');
-    bc.onmessage = (e: MessageEvent<TotemState>) => {
-      setState(e.data);
-      setConnected(true);
-    };
-
-    const req = new BroadcastChannel('totem_request');
-    req.postMessage('get_state');
-    req.close();
-
-    // Escuchar recall/announce desde el operador
-    const announce = new BroadcastChannel('totem_announce');
-    announce.onmessage = (e: MessageEvent<{ number: string; station: string; recall?: boolean }>) => {
-      const { number, station, recall } = e.data;
-      if (!recall) return; // los llamados normales los gestiona el cambio de estado
-      // Recall: chime + hablar sin cambiar estado visual
-      const stationShort = station.split(' — ').pop() || station;
-      playChime().then(() => {
-        const [letter, num] = splitTicketNumber(number);
-        const text = `Turno ${letter} ${num}, ${stationShort}.`;
-        speakNeural(text);
-      });
-    };
-
-    return () => { bc.close(); announce.close(); };
-  }, []);
-
-  // Cuando cambia el turno activo → animar + chime + hablar + guardar en historial
+  // Cuando cambia el turno activo o se hace un recall → animar + chime + hablar + guardar en historial
   useEffect(() => {
     const ticket = state.currentTicket;
     if (!ticket || ticket.status !== 'in_progress') return;
-    if (ticket.id === prevTicketId.current) return;
+    
+    const currentUpdate = ticket.updatedAt || 0;
+    if (ticket.id === prevTicketId.current && currentUpdate === prevUpdateRef.current) return;
 
     prevTicketId.current = ticket.id;
+    prevUpdateRef.current = currentUpdate;
     setAnimKey(k => k + 1);
 
     // Guardar en historial (máximo 5, el más reciente queda al inicio)
@@ -251,7 +265,7 @@ export default function DisplayScreen() {
       speakNeural(buildSpeechText(ticket, state.station.name.split(' — ').pop() || state.station.name));
     }, 150);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [state.currentTicket?.id, state.currentTicket?.status]);
+  }, [state.currentTicket?.id, state.currentTicket?.status, state.currentTicket?.updatedAt, state.station.name]);
 
   const ticket = state.currentTicket;
   const isActive = ticket && ticket.status === 'in_progress';

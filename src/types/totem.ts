@@ -19,6 +19,7 @@ export interface Ticket {
   _letra?:     string;
   _rut?:       string;
   _emitidoEn?: number;
+  updatedAt?:  number; // timestamp del último llamado para display global
 }
 
 export interface QueueEntry {

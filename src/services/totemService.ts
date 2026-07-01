@@ -265,6 +265,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
         status: 'in_progress',
         duration: 0,
         pauseReason: null,
+        updatedAt: Date.now(),
       };
 
       await deleteDoc(doc(db, 'queue', docId));
@@ -298,6 +299,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
           'currentTicket.status': 'in_progress',
           'currentTicket.duration': 0,
           'currentTicket.pauseReason': null,
+          'currentTicket.updatedAt': Date.now(),
         });
         // Anuncia de nuevo para TTS
         try {
@@ -355,6 +357,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
         status: 'in_progress',
         duration: 0,
         pauseReason: null,
+        updatedAt: Date.now(),
       };
 
       await deleteDoc(doc(db, 'queue', nextDocId));
