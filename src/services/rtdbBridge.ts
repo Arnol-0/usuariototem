@@ -154,14 +154,15 @@ async function _addToFirestoreQueue(
   idx:         number,     // 1
   ticket:      RtdbTicket,
 ): Promise<void> {
-  // Evita duplicados: comprueba si ya existe en Firestore por _rtdbKey
+  const fsDocId = `rtdb-${codServicio}-${idx}`;
+  
+  // Evita duplicados en caso de carrera: usa setDoc para ser idempotente
   try {
-    const existing = await getDocs(
+    const existingSnap = await getDocs(
       query(collection(db, 'queue'), where('_rtdbKey', '==', key)),
     );
-    if (!existing.empty) {
-      // Ya existe — registra el mapeo y sale
-      _queueMap.set(key, existing.docs[0].id);
+    if (!existingSnap.empty) {
+      _queueMap.set(key, existingSnap.docs[0].id);
       return;
     }
   } catch { /* sin permisos de lectura todavía — continúa */ }
@@ -171,7 +172,7 @@ async function _addToFirestoreQueue(
 
   const entry = {
     ticket: {
-      id:           `rtdb-${codServicio}-${idx}`,
+      id:           fsDocId,
       number:       ticket.ticketCompleto,          // "A-1"
       name:         ticket.rut,                     // RUT como nombre visible
       service:      ticket.servicio,
@@ -198,9 +199,10 @@ async function _addToFirestoreQueue(
   };
 
   try {
-    const docRef = await addDoc(collection(db, 'queue'), entry);
-    _queueMap.set(key, docRef.id);
-    console.log(`[rtdbBridge] ✅ Ticket ${ticket.ticketCompleto} (${key}) → Firestore queue/${docRef.id}`);
+    // IMPORTANTE: setDoc evita que 2 clientes creen documentos duplicados al mismo tiempo
+    await setDoc(doc(db, 'queue', fsDocId), entry, { merge: true });
+    _queueMap.set(key, fsDocId);
+    console.log(`[rtdbBridge] ✅ Ticket ${ticket.ticketCompleto} (${key}) → Firestore queue/${fsDocId}`);
   } catch (err) {
     console.error('[rtdbBridge] ❌ Error insertando en queue:', err);
   }

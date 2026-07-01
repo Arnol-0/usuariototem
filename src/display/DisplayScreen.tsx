@@ -337,8 +337,6 @@ export default function DisplayScreen() {
           </div>
         </div>
         <div className="ds-header-right">
-          <span className={`ds-conn-dot ${connected ? 'on' : 'off'}`} />
-          <span className="ds-conn-label">{connected ? 'En línea' : 'Conectando…'}</span>
           <span className="ds-clock" id="ds-clock" />
         </div>
       </div>
