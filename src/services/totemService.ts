@@ -81,7 +81,7 @@ function startListeners() {
   const unsubQueue = onSnapshot(
     query(QUEUE_COL, orderBy('position', 'asc')),
     snap => {
-      _queue = snap.docs.map(d => d.data() as QueueEntry);
+      _queue = snap.docs.map(d => ({ ...d.data(), _docId: d.id } as QueueEntry));
       _totalInQueue = _queue.length;
       notify();
     },
@@ -189,24 +189,28 @@ export async function setOperatorName(operatorId: string): Promise<void> {
  *  2. tx.get dentro de la tx para leer consistente + marcar _claiming
  */
 async function claimNextTicket(): Promise<{ entry: QueueEntry; docId: string } | null> {
-  const preSnap = await getDocs(
-    query(QUEUE_COL, orderBy('position', 'asc'), limit(1)),
-  );
-  if (preSnap.empty) return null;
+  const labels = _station.area.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  
+  const target = _queue.find(e => {
+    if (e._claiming) return false;
+    const letter = e._letra || e.ticket.number.charAt(0).toUpperCase();
+    return labels.length === 0 || labels.includes(letter);
+  });
 
-  const firstRef = preSnap.docs[0].ref;
+  if (!target || !target._docId) return null;
+  const docRef = doc(db, 'queue', target._docId);
+
   let result: { entry: QueueEntry; docId: string } | null = null;
-
   try {
     await runTransaction(db, async (tx) => {
-      const freshSnap = await tx.get(firstRef);
+      const freshSnap = await tx.get(docRef);
       if (!freshSnap.exists()) return;
 
       const data = freshSnap.data() as QueueEntry;
-      if (data._claiming) return;   // otro puesto lo reclamó primero
+      if (data._claiming) return;
 
-      tx.update(firstRef, { _claiming: _station.id });
-      result = { entry: data, docId: firstRef.id };
+      tx.update(docRef, { _claiming: _station.id });
+      result = { entry: data, docId: docRef.id };
     });
   } catch {
     result = null;

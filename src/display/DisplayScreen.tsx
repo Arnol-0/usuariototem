@@ -100,7 +100,7 @@ async function speakNeural(text: string): Promise<void> {
     if (ok) return;
   }
   // Fallback: Web Speech API con voz femenina en español
-  speakBrowser(text);
+  await speakBrowser(text);
 }
 
 // ── ElevenLabs TTS ────────────────────────────────────────────────────────────
@@ -142,39 +142,43 @@ async function speakElevenLabs(text: string, key: string, voiceId: string): Prom
 }
 
 // ── Web Speech API — voz femenina en español (fallback sin internet) ──────────
-function speakBrowser(text: string) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+function speakBrowser(text: string): Promise<void> {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) return resolve();
+    window.speechSynthesis.cancel();
 
-  // Esperar voces si aún no cargaron
-  const doSpeak = () => {
-    const voices  = window.speechSynthesis.getVoices();
-    const esVoices = voices.filter(v => v.lang.startsWith('es') && !v.lang.startsWith('pt'));
+    const doSpeak = () => {
+      const voices  = window.speechSynthesis.getVoices();
+      const esVoices = voices.filter(v => v.lang.startsWith('es') && !v.lang.startsWith('pt'));
 
-    // Prioridad: Sabina (MX) → Paulina (MX) → Helena (ES) → Microsoft femenina ES → cualquier ES
-    const female =
-      esVoices.find(v => v.name.includes('Sabina'))  ??
-      esVoices.find(v => v.name.includes('Paulina')) ??
-      esVoices.find(v => v.name.includes('Helena'))  ??
-      esVoices.find(v => v.name.toLowerCase().includes('microsoft') && /sabina|paulina|helena|laura|mónica|monica/i.test(v.name)) ??
-      esVoices.find(v => !v.localService) ??
-      esVoices[0];
+      const female =
+        esVoices.find(v => v.name.includes('Sabina'))  ??
+        esVoices.find(v => v.name.includes('Paulina')) ??
+        esVoices.find(v => v.name.includes('Helena'))  ??
+        esVoices.find(v => v.name.toLowerCase().includes('microsoft') && /sabina|paulina|helena|laura|mónica|monica/i.test(v.name)) ??
+        esVoices.find(v => !v.localService) ??
+        esVoices[0];
 
-    const utt    = new SpeechSynthesisUtterance(text);
-    utt.lang     = 'es-MX';
-    utt.rate     = 0.82;
-    utt.pitch    = 1.05;
-    utt.volume   = 1;
-    if (female) utt.voice = female;
-    window.speechSynthesis.speak(utt);
-  };
+      const utt    = new SpeechSynthesisUtterance(text);
+      utt.lang     = 'es-MX';
+      utt.rate     = 0.82;
+      utt.pitch    = 1.05;
+      utt.volume   = 1;
+      if (female) utt.voice = female;
+      
+      utt.onend = () => resolve();
+      utt.onerror = () => resolve();
+      
+      window.speechSynthesis.speak(utt);
+    };
 
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    doSpeak();
-  } else {
-    window.speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true });
-  }
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true });
+    }
+  });
 }
 
 function buildSpeechText(ticket: Ticket, stationName: string): string {
@@ -196,8 +200,45 @@ export default function DisplayScreen() {
   const [elKey,   setElKey]   = useState(() => localStorage.getItem('elevenlabs_key')   || '');
   const [elVoice, setElVoice] = useState(() => localStorage.getItem('elevenlabs_voice') || ELEVENLABS_VOICE_ID_DEFAULT);
 
-  const prevTicketId = useRef<string | null>(null);
-  const prevUpdateRef = useRef<number | null>(null);
+  const isInitialLoad = useRef(true);
+  const stationsUpdateRef = useRef<Record<string, number>>({});
+  
+  const queueLoopActive = useRef(false);
+  const announcementsQueue = useRef<{ ticket: Ticket; station: Station }[]>([]);
+  const latestGlobalState = useRef<{ ticket: Ticket | null; station: Station | null }>({ ticket: null, station: null });
+
+  const processQueue = async () => {
+    if (queueLoopActive.current) return;
+    queueLoopActive.current = true;
+
+    while (announcementsQueue.current.length > 0) {
+      const ann = announcementsQueue.current[0];
+      const ticket = ann.ticket;
+      const station = ann.station;
+
+      setState(prev => ({ ...prev, currentTicket: ticket, station: station }));
+      setAnimKey(k => k + 1);
+
+      const [l, n] = splitTicketNumber(ticket.number);
+      setRecentCalls(prev => [
+        { id: ticket.id, letter: l, number: n, name: ticket.name, service: ticket.service },
+        ...prev.filter(r => r.id !== ticket.id).slice(0, 4),
+      ]);
+
+      await playChime();
+      await speakNeural(buildSpeechText(ticket, station.name.split(' — ').pop() || station.name));
+
+      announcementsQueue.current.shift();
+    }
+
+    setState(prev => ({
+      ...prev, 
+      currentTicket: latestGlobalState.current.ticket, 
+      station: latestGlobalState.current.station || prev.station 
+    }));
+
+    queueLoopActive.current = false;
+  };
 
   useEffect(() => {
     const qQueue = query(collection(db, 'queue'), orderBy('position', 'asc'));
@@ -216,6 +257,7 @@ export default function DisplayScreen() {
       
       let latestTicket: Ticket | null = null;
       let latestStation: Station = { id: '', name: 'TotemDesk', area: '', isActive: false };
+      const newAnnouncements: { ticket: Ticket; station: Station }[] = [];
       
       for (const st of stationsData) {
         const t = st.currentTicket;
@@ -224,48 +266,36 @@ export default function DisplayScreen() {
             latestTicket = t;
             latestStation = st.station;
           }
+          const stId = st.station.id;
+          const currentUpdate = t.updatedAt || 0;
+          const prevUpdate = stationsUpdateRef.current[stId] || 0;
+
+          if (currentUpdate > prevUpdate) {
+            stationsUpdateRef.current[stId] = currentUpdate;
+            if (!isInitialLoad.current) {
+              newAnnouncements.push({ ticket: t, station: st.station });
+            }
+          }
         }
       }
 
-      setState(prev => ({
-        ...prev,
-        currentTicket: latestTicket,
-        station: latestStation,
-        isConnected: true
-      }));
+      latestGlobalState.current = { ticket: latestTicket, station: latestStation };
+
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        setState(prev => ({ ...prev, currentTicket: latestTicket, station: latestStation, isConnected: true }));
+      } else {
+        if (newAnnouncements.length > 0) {
+          announcementsQueue.current.push(...newAnnouncements);
+          processQueue();
+        } else if (!queueLoopActive.current) {
+          setState(prev => ({ ...prev, currentTicket: latestTicket, station: latestStation, isConnected: true }));
+        }
+      }
     });
 
     return () => { unsubQueue(); unsubState(); };
   }, []);
-
-  // Cuando cambia el turno activo o se hace un recall → animar + chime + hablar + guardar en historial
-  useEffect(() => {
-    const ticket = state.currentTicket;
-    if (!ticket || ticket.status !== 'in_progress') return;
-    
-    const currentUpdate = ticket.updatedAt || 0;
-    if (ticket.id === prevTicketId.current && currentUpdate === prevUpdateRef.current) return;
-
-    prevTicketId.current = ticket.id;
-    prevUpdateRef.current = currentUpdate;
-    setAnimKey(k => k + 1);
-
-    // Guardar en historial (máximo 5, el más reciente queda al inicio)
-    const [l, n] = splitTicketNumber(ticket.number);
-    setRecentCalls(prev => [
-      { id: ticket.id, letter: l, number: n, name: ticket.name, service: ticket.service },
-      ...prev.filter(r => r.id !== ticket.id).slice(0, 4),
-    ]);
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      if (cancelled) return;
-      await playChime();
-      if (cancelled) return;
-      speakNeural(buildSpeechText(ticket, state.station.name.split(' — ').pop() || state.station.name));
-    }, 150);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [state.currentTicket?.id, state.currentTicket?.status, state.currentTicket?.updatedAt, state.station.name]);
 
   const ticket = state.currentTicket;
   const isActive = ticket && ticket.status === 'in_progress';

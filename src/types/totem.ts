@@ -31,6 +31,7 @@ export interface QueueEntry {
   _rtdbId?:    string;
   _letra?:     string;
   _claiming?:  string;
+  _docId?:     string;
 }
 
 export interface Station {
