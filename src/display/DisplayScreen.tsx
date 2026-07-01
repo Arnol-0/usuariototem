@@ -260,7 +260,18 @@ export default function DisplayScreen() {
   useEffect(() => {
     const qQueue = query(collection(db, 'queue'), orderBy('position', 'asc'));
     const unsubQueue = onSnapshot(qQueue, (snap) => {
-      const queueData = snap.docs.map(d => d.data() as QueueEntry);
+      const queueDataRaw = snap.docs.map(d => d.data() as QueueEntry);
+      
+      // Deduplicar visualmente por número de ticket (por si hay basura de versiones anteriores)
+      const seen = new Set<string>();
+      const queueData: QueueEntry[] = [];
+      for (const entry of queueDataRaw) {
+        if (!seen.has(entry.ticket.number)) {
+          seen.add(entry.ticket.number);
+          queueData.push(entry);
+        }
+      }
+
       setState(prev => ({
         ...prev,
         queue: queueData,
