@@ -374,7 +374,7 @@ export default function DisplayScreen() {
 
             {ticket && (
               <div className="ds-name-row">
-                <span className="ds-client-name">{ticket.name}</span>
+                <span className="ds-client-name">{state.station?.name?.split(' — ').pop() || state.station?.name || 'Módulo'}</span>
                 <span className="ds-service-badge">{ticket.service}</span>
               </div>
             )}
