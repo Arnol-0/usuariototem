@@ -232,13 +232,17 @@ export default function DisplayScreen() {
       setAnimKey(k => k + 1);
 
       const [l, n] = splitTicketNumber(ticket.number);
+      
+      const rawStationName = station.name.split(' — ').pop() || station.name;
+      const formattedStationName = rawStationName.replace(/Puesto/ig, 'Módulo');
+
       setRecentCalls(prev => [
-        { id: ticket.id, letter: l, number: n, name: ticket.name, service: ticket.service || '', stationName: station.name.split(' — ').pop() || station.name },
+        { id: ticket.id, letter: l, number: n, name: ticket.name, service: ticket.service || '', stationName: formattedStationName },
         ...prev.filter(r => r.id !== ticket.id).slice(0, 4),
       ]);
 
       await playChime();
-      await speakNeural(buildSpeechText(ticket, station.name.split(' — ').pop() || station.name));
+      await speakNeural(buildSpeechText(ticket, formattedStationName));
 
       announcementsQueue.current.shift();
       currentPlayingTicketId.current = null;
@@ -374,7 +378,9 @@ export default function DisplayScreen() {
 
             {ticket && (
               <div className="ds-name-row">
-                <span className="ds-client-name">{state.station?.name?.split(' — ').pop() || state.station?.name || 'Módulo'}</span>
+                <span className="ds-client-name">
+                  {(state.station?.name?.split(' — ').pop() || state.station?.name || 'Módulo').replace(/Puesto/ig, 'Módulo')}
+                </span>
                 <span className="ds-service-badge">{ticket.service}</span>
               </div>
             )}
