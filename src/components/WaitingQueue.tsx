@@ -23,19 +23,26 @@ function QueueRow({ entry }: { entry: QueueEntry }) {
 
 export default function WaitingQueue() {
   const { state } = useTotem();
-  const { queue, totalInQueue } = state;
-  const extra = totalInQueue - queue.length;
+  const { queue, totalInQueue, station } = state;
+  const labels = station.area ? station.area.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [];
+  
+  const filteredQueue = labels.length > 0 
+    ? queue.filter(e => labels.includes(e._letra || e.ticket.number.charAt(0).toUpperCase()))
+    : queue;
+
+  const filteredTotal = filteredQueue.length;
+  const extra = filteredTotal - filteredQueue.slice(0, 50).length; // Mostramos hasta 50, el extra se calcula en base a lo filtrado
 
   return (
     <div className="waiting-queue">
       <div className="wq-header">
         <span className="wq-dot" />
         <span className="wq-title">Cola de espera</span>
-        <span className="wq-count">{totalInQueue}</span>
+        <span className="wq-count">{filteredTotal}</span>
       </div>
 
       <div className="wq-list">
-        {queue.map(entry => (
+        {filteredQueue.slice(0, 50).map(entry => (
           <QueueRow key={entry.ticket.id} entry={entry} />
         ))}
       </div>

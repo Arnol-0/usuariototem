@@ -253,20 +253,22 @@ export default function DisplayScreen() {
     });
 
     const unsubState = onSnapshot(collection(db, 'state'), (snap) => {
-      const stationsData = snap.docs.map(d => d.data() as { currentTicket: Ticket | null, station: Station });
+      const stationsData = snap.docs.map(d => ({ data: d.data() as { currentTicket: Ticket | null, station: Station }, id: d.id }));
       
       let latestTicket: Ticket | null = null;
       let latestStation: Station = { id: '', name: 'TotemDesk', area: '', isActive: false };
       const newAnnouncements: { ticket: Ticket; station: Station }[] = [];
       
-      for (const st of stationsData) {
+      for (const stObj of stationsData) {
+        const st = stObj.data;
+        const opId = stObj.id; // operatorId
         const t = st.currentTicket;
         if (t && t.status === 'in_progress') {
           if (!latestTicket || (t.updatedAt && latestTicket.updatedAt && t.updatedAt > latestTicket.updatedAt)) {
             latestTicket = t;
             latestStation = st.station;
           }
-          const stId = st.station.id;
+          const stId = opId;
           const currentUpdate = t.updatedAt || 0;
           const prevUpdate = stationsUpdateRef.current[stId] || 0;
 

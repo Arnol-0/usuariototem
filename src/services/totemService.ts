@@ -255,11 +255,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
 
       if (!claimed) {
         // Cola vacía — solo "Sin turno activo" cuando hay pausa; aquí el op espera
-        await setDoc(
-          doc(db, 'state', _station.id),
-          { currentTicket: null, station: _station },
-          { merge: true },
-        );
+        await setDoc(stateDoc(), { currentTicket: null, station: _station }, { merge: true });
         break;
       }
 
@@ -273,11 +269,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       };
 
       await deleteDoc(doc(db, 'queue', docId));
-      await setDoc(
-        doc(db, 'state', _station.id),
-        { currentTicket: next, station: _station },
-        { merge: true },
-      );
+      await setDoc(stateDoc(), { currentTicket: next, station: _station }, { merge: true });
 
       // Notifica al RTDB
       const tNext = next as Ticket & { _codServicio?: string; _rtdbIdx?: number };
@@ -347,44 +339,11 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
         }
       }
 
-      // ── Después de finalizar, llama automáticamente al siguiente ───────────
-      const claimedAfterFinish = await claimNextTicket();
-
-      if (!claimedAfterFinish) {
-        await setDoc(stateDoc(), { currentTicket: null, station: _station }, { merge: true });
-        break;
-      }
-
-      const { entry: nextEntry, docId: nextDocId } = claimedAfterFinish;
-      const nextTicket: Ticket = {
-        ...nextEntry.ticket,
-        status: 'in_progress',
-        duration: 0,
-        pauseReason: null,
-        updatedAt: Date.now(),
-      };
-
-      await deleteDoc(doc(db, 'queue', nextDocId));
-      await setDoc(
-        doc(db, 'state', _station.id),
-        { currentTicket: nextTicket, station: _station },
-        { merge: true },
-      );
-
-      const tNext2 = nextTicket as Ticket & { _codServicio?: string; _rtdbIdx?: number };
-      if (tNext2._codServicio && tNext2._rtdbIdx !== undefined) {
-        const { operatorId } = getBridgeConfig();
-        rtdbMarkCalled(tNext2._codServicio, tNext2._rtdbIdx, _station.id, operatorId)
-          .catch(console.error);
-      }
-
-      try {
-        new BroadcastChannel('totem_announce').postMessage({
-          number: nextTicket.number,
-          station: _station.name,
-        });
-      } catch { /* sin BroadcastChannel */ }
+      // ── En lugar de llamar automáticamente al siguiente, solo limpia el turno ───────────
+      await setDoc(stateDoc(), { currentTicket: null, station: _station }, { merge: true });
       break;
+
+
     }
   }
 }
