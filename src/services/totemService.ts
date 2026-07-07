@@ -228,27 +228,38 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       // ── Si hay turno activo, guarda historial antes de descartarlo ─────────
       if (_current && payload.action === 'next') {
         const t = _current as Ticket & { _codServicio?: string; _rtdbIdx?: number };
-        // Guarda en Firestore `tickets` como "skipped"
-        addDoc(collection(db, 'tickets'), {
-          letter: _current.number?.charAt(0) ?? '',
-          number: _current.number,
-          service: _current.service,
-          rut: _current.name,
-          issuedAt: null,
-          calledAt: new Date(),
-          finishedAt: new Date(),
-          status: 'skipped',
-          skipReason: payload.skipReason ?? 'other',
-          comment: payload.comment ?? '',
-          stationId: _station.id,
-          operatorId: getBridgeConfig().operatorId,
-          waitSec: _current.waitingTime,
-        }).catch(console.error);
-        // Notifica al RTDB que este turno fue descartado
+        
         if (t._codServicio && t._rtdbIdx !== undefined) {
-          const rtdbStatus = (payload.skipReason === 'no_show' || payload.skipReason === 'other') ? 'no_atendido' : 'atendido';
-          rtdbMarkFinished(t._codServicio, t._rtdbIdx, rtdbStatus, _current as any, Date.now())
-            .catch(console.error);
+          get(getRtdbTicketRef(t._codServicio, t._rtdbIdx)).then((rtdbSnap) => {
+            const rtdbData = rtdbSnap.val() as RtdbTicket | null;
+            if (rtdbData) {
+              const rtdbStatus = (payload.skipReason === 'no_show' || payload.skipReason === 'other') ? 'no_atendido' : 'atendido';
+              rtdbMarkFinished(t._codServicio!, t._rtdbIdx!, rtdbStatus, rtdbData, rtdbData.llamadoEn ?? Date.now(), _current!.duration).catch(console.error);
+              const docId = `${rtdbData.letra.toUpperCase()}-${t._codServicio}-${t._rtdbIdx}`;
+              setDoc(doc(db, 'tickets', docId), { 
+                comment: payload.comment ?? '', 
+                skipReason: payload.skipReason ?? 'other' 
+              }, { merge: true }).catch(console.error);
+            }
+          }).catch(console.error);
+        } else {
+          // Guarda en Firestore `tickets` como "skipped" si no es de RTDB
+          addDoc(collection(db, 'tickets'), {
+            letter: _current.number?.charAt(0) ?? '',
+            number: _current.number,
+            service: _current.service,
+            rut: _current.name,
+            issuedAt: _current._emitidoEn ? new Date(_current._emitidoEn) : new Date(),
+            calledAt: new Date(),
+            finishedAt: new Date(),
+            status: 'skipped',
+            skipReason: payload.skipReason ?? 'other',
+            comment: payload.comment ?? '',
+            stationId: _station.id,
+            operatorId: getBridgeConfig().operatorId,
+            waitSec: _current.waitingTime,
+            durationSec: _current.duration,
+          }).catch(console.error);
         }
       }
 
@@ -264,7 +275,7 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       const { entry, docId } = claimed;
       const next: Ticket = {
         ...entry.ticket,
-        status: 'in_progress',
+        status: 'called',
         duration: 0,
         pauseReason: null,
         updatedAt: Date.now(),
@@ -291,11 +302,20 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
       break;
     }
 
-    case 'recall':
-      if (_current) {
+    case 'start_attention':
+      if (_current && _current.status === 'called') {
         await updateDoc(stateDoc(), {
           'currentTicket.status': 'in_progress',
-          'currentTicket.duration': 0,
+          'currentTicket.updatedAt': Date.now(),
+        });
+      }
+      break;
+
+    case 'recall':
+      if (_current) {
+        const newStatus = _current.status === 'paused' ? 'in_progress' : _current.status;
+        await updateDoc(stateDoc(), {
+          'currentTicket.status': newStatus,
           'currentTicket.pauseReason': null,
           'currentTicket.updatedAt': Date.now(),
         });
@@ -336,8 +356,28 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
               payload.action === 'transfer' ? 'transferido' : 'atendido',
               rtdbData,
               rtdbData.llamadoEn ?? Date.now(),
+              _current.duration
             ).catch(console.error);
+            const docId = `${rtdbData.letra.toUpperCase()}-${t._codServicio}-${t._rtdbIdx}`;
+            setDoc(doc(db, 'tickets', docId), { comment: payload.comment ?? '' }, { merge: true }).catch(console.error);
           }
+        } else {
+          // Guarda en Firestore `tickets` si no es de RTDB
+          addDoc(collection(db, 'tickets'), {
+            letter: _current.number?.charAt(0) ?? '',
+            number: _current.number,
+            service: _current.service,
+            rut: _current.name,
+            issuedAt: _current._emitidoEn ? new Date(_current._emitidoEn) : new Date(),
+            calledAt: new Date(Date.now() - (_current.duration * 1000)),
+            finishedAt: new Date(),
+            status: payload.action === 'transfer' ? 'transferred' : 'finished',
+            comment: payload.comment ?? '',
+            stationId: _station.id,
+            operatorId: getBridgeConfig().operatorId,
+            waitSec: _current.waitingTime,
+            durationSec: _current.duration,
+          }).catch(console.error);
         }
       }
 

@@ -1,6 +1,6 @@
 // Tipos base del sistema de tótem
 
-export type TicketStatus = 'waiting' | 'in_progress' | 'paused' | 'done';
+export type TicketStatus = 'waiting' | 'called' | 'in_progress' | 'paused' | 'done';
 export type PauseReason  = 'bathroom' | 'lunch';
 export type SkipReason   = 'no_show' | 'other';  // motivo al dar Siguiente
 
@@ -41,7 +41,7 @@ export interface Station {
   isActive: boolean;
 }
 
-export type TicketAction = 'next' | 'recall' | 'finish' | 'pause' | 'pause_bathroom' | 'pause_lunch' | 'resume' | 'transfer';
+export type TicketAction = 'next' | 'recall' | 'start_attention' | 'finish' | 'pause' | 'pause_bathroom' | 'pause_lunch' | 'resume' | 'transfer';
 
 export interface ActionPayload {
   action:      TicketAction;

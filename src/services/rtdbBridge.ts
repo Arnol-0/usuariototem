@@ -61,6 +61,7 @@ export interface RtdbTicket {
   puestoId?:     string | null;
   operadorId?:   string | null;
   esperaSeg?:    number | null;
+  durationSec?:  number | null;
 }
 
 // ─── Estado interno del bridge ────────────────────────────────────────────────
@@ -241,6 +242,7 @@ export async function rtdbMarkFinished(
   status:       'atendido' | 'transferido' | 'no_atendido',
   ticket:       RtdbTicket,
   llamadoEn:    number,
+  durationSec:  number = 0,
 ): Promise<void> {
   const ahora     = Date.now();
   const esperaSeg = llamadoEn
@@ -265,6 +267,7 @@ export async function rtdbMarkFinished(
     stationId:  _stationId,
     operatorId: _operatorId,
     waitSec:    esperaSeg,
+    durationSec: durationSec,
   });
 }
 

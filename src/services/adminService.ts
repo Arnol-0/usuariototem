@@ -60,6 +60,14 @@ export interface TicketStatRow {
   pending: number;     // en cola o en progreso
   unattended: number;  // tickets que no se presentaron o fueron saltados (status skipped)
   avgWaitSec: number;  // tiempo promedio de espera en segundos
+  avgDurationSec: number;
+}
+
+export interface OperatorStatRow {
+  operatorId: string;
+  attended: number;
+  avgWaitSec: number;
+  avgDurationSec: number;
 }
 
 export interface TicketRecord {
@@ -71,10 +79,11 @@ export interface TicketRecord {
   issuedAt: number;     // timestamp ms cuando fue emitido
   calledAt: number | null;
   finishedAt: number | null;
-  status: 'waiting' | 'in_progress' | 'finished' | 'transferred' | 'skipped';
+  status: 'waiting' | 'called' | 'in_progress' | 'paused' | 'finished' | 'transferred' | 'skipped';
   stationId: string | null;
   operatorId: string | null;
   waitSec: number | null;  // segundos de espera real
+  durationSec: number | null;
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -224,6 +233,7 @@ export async function getTicketStats(
         stationId:  data.stationId  ?? null,
         operatorId: data.operatorId ?? null,
         waitSec:    data.waitSec  ?? null,
+        durationSec: data.durationSec ?? null,
       } as TicketRecord;
     });
   } catch {
@@ -236,17 +246,20 @@ export async function getTicketStats(
  * Agrupa un array de TicketRecord por letra y calcula totales y promedios.
  */
 export function groupStatsByLetter(tickets: TicketRecord[]): TicketStatRow[] {
-  const map = new Map<string, { service: string; total: number; attended: number; pending: number; unattended: number; waitSecs: number[] }>();
+  const map = new Map<string, { service: string; total: number; attended: number; pending: number; unattended: number; waitSecs: number[]; durationSecs: number[] }>();
 
   for (const t of tickets) {
     const key = t.letter.toUpperCase();
     if (!map.has(key)) {
-      map.set(key, { service: t.service, total: 0, attended: 0, pending: 0, unattended: 0, waitSecs: [] });
+      map.set(key, { service: t.service, total: 0, attended: 0, pending: 0, unattended: 0, waitSecs: [], durationSecs: [] });
     }
     const row = map.get(key)!;
     row.total++;
     if (t.status === 'finished' || t.status === 'transferred') {
       row.attended++;
+      if (t.durationSec != null && t.durationSec >= 0) {
+        row.durationSecs.push(t.durationSec);
+      }
     } else if (t.status === 'skipped') {
       row.unattended++;
     } else {
@@ -268,6 +281,52 @@ export function groupStatsByLetter(tickets: TicketRecord[]): TicketStatRow[] {
       unattended: row.unattended,
       avgWaitSec: row.waitSecs.length
         ? Math.round(row.waitSecs.reduce((s, v) => s + v, 0) / row.waitSecs.length)
+        : 0,
+      avgDurationSec: row.durationSecs.length
+        ? Math.round(row.durationSecs.reduce((s, v) => s + v, 0) / row.durationSecs.length)
+        : 0,
+    }));
+}
+
+export function groupStatsByOperator(tickets: TicketRecord[], operators: Operator[]): OperatorStatRow[] {
+  const map = new Map<string, { attended: number; waitSecs: number[]; durationSecs: number[] }>();
+
+  // Inicializar todos los operadores
+  for (const op of operators) {
+    map.set(op.id, { attended: 0, waitSecs: [], durationSecs: [] });
+  }
+
+  for (const t of tickets) {
+    if (!t.operatorId) continue;
+    const key = t.operatorId;
+    if (!map.has(key)) {
+      map.set(key, { attended: 0, waitSecs: [], durationSecs: [] });
+    }
+    const row = map.get(key)!;
+    
+    if (t.status === 'finished' || t.status === 'transferred') {
+      row.attended++;
+      if (t.durationSec != null && t.durationSec >= 0) {
+        row.durationSecs.push(t.durationSec);
+      }
+    }
+    
+    // We can count waitSec for all tickets handled by this operator, or only attended. Let's do all.
+    if (t.waitSec != null && t.waitSec >= 0) {
+      row.waitSecs.push(t.waitSec);
+    }
+  }
+
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([operatorId, row]) => ({
+      operatorId,
+      attended: row.attended,
+      avgWaitSec: row.waitSecs.length
+        ? Math.round(row.waitSecs.reduce((s, v) => s + v, 0) / row.waitSecs.length)
+        : 0,
+      avgDurationSec: row.durationSecs.length
+        ? Math.round(row.durationSecs.reduce((s, v) => s + v, 0) / row.durationSecs.length)
         : 0,
     }));
 }

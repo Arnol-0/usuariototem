@@ -5,8 +5,8 @@ import autoTable from 'jspdf-autotable';
 import {
   subscribeOperators, createOperator, deleteOperator,
   subscribeStations, assignOperator, createStation, updateStation, deleteStation,
-  getAllComments, getTicketStats, groupStatsByLetter,
-  type Operator, type WorkStation, type UserRole, type TicketStatRow, type TicketRecord,
+  getAllComments, getTicketStats, groupStatsByLetter, groupStatsByOperator,
+  type Operator, type WorkStation, type UserRole, type TicketStatRow, type TicketRecord, type OperatorStatRow,
 } from '../services/adminService';
 import './AdminPanel.css';
 
@@ -578,7 +578,8 @@ const LETTER_COLORS = [
 ];
 
 function fmtSec(sec: number): string {
-  if (sec === 0) return '—';
+  if (sec == null || isNaN(sec)) return '—';
+  if (sec === 0) return '0s';
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
@@ -657,7 +658,7 @@ function SectionStatistics() {
   const [fromDate, setFromDate] = useState(isoDate(defRange.from));
   const [toDate,   setToDate]   = useState(isoDate(defRange.to));
   const [tickets,  setTickets]  = useState<TicketRecord[]>([]);
-  const [rows,     setRows]     = useState<TicketStatRow[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -669,7 +670,11 @@ function SectionStatistics() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const unsub = subscribeOperators(setOperators);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      unsub();
+    };
   }, []);
 
   async function loadStats(from: string, to: string) {
@@ -679,7 +684,6 @@ function SectionStatistics() {
       const t = new Date(to   + 'T23:59:59');
       const data = await getTicketStats(f, t);
       setTickets(data);
-      setRows(groupStatsByLetter(data));
     } finally {
       setLoading(false);
     }
@@ -687,12 +691,18 @@ function SectionStatistics() {
 
   useEffect(() => { loadStats(fromDate, toDate); }, []);
 
+  const rows = React.useMemo(() => groupStatsByLetter(tickets), [tickets]);
+  const operatorRows = React.useMemo(() => groupStatsByOperator(tickets, operators), [tickets, operators]);
+
   const totalTickets  = rows.reduce((s, r) => s + r.total,    0);
   const totalAttended = rows.reduce((s, r) => s + r.attended, 0);
   const totalPending  = rows.reduce((s, r) => s + r.pending,  0);
   const totalUnattended = rows.reduce((s, r) => s + r.unattended, 0);
   const avgWaitAll    = rows.length
     ? Math.round(rows.reduce((s, r) => s + r.avgWaitSec * r.attended, 0) / Math.max(totalAttended, 1))
+    : 0;
+  const avgDurationAll = rows.length
+    ? Math.round(rows.reduce((s, r) => s + r.avgDurationSec * r.attended, 0) / Math.max(totalAttended, 1))
     : 0;
 
   const pieSlices = [
@@ -711,7 +721,7 @@ function SectionStatistics() {
       [`Período: ${fromDate}  al  ${toDate}`],
       [`Generado el: ${new Date().toLocaleString('es-CL')}`],
       [],
-      ['Letra', 'Servicio', 'Total emitidos', 'Atendidos', 'No Atendidos', 'En espera / cola', 'Tiempo prom. espera'],
+      ['Letra', 'Servicio', 'Total emitidos', 'Atendidos', 'No Atendidos', 'En espera / cola', 'Tiempo prom. espera', 'Tiempo prom. atención'],
       ...rows.map(r => [
         r.letter,
         r.service,
@@ -720,9 +730,10 @@ function SectionStatistics() {
         r.unattended,
         r.pending,
         fmtSec(r.avgWaitSec),
+        fmtSec(r.avgDurationSec),
       ]),
       [],
-      ['TOTALES', '', totalTickets, totalAttended, totalUnattended, totalPending, fmtSec(avgWaitAll)],
+      ['TOTALES', '', totalTickets, totalAttended, totalUnattended, totalPending, fmtSec(avgWaitAll), fmtSec(avgDurationAll)],
     ];
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     // Anchos de columna
@@ -734,7 +745,7 @@ function SectionStatistics() {
     // ── Hoja 2: Detalle de tickets ────────────────────────────────────────
     const detailHeader = [
       'N° Ticket', 'Letra', 'Servicio', 'RUT', 'Fecha Emisión', 'Hora Emisión',
-      'Hora Llamado', 'Hora Fin', 'Estado', 'Espera (seg)',
+      'Hora Llamado', 'Hora Fin', 'Estado', 'Espera (seg)', 'Atención (seg)'
     ];
     const detailRows = tickets.map(t => {
       const issued = new Date(t.issuedAt);
@@ -752,12 +763,13 @@ function SectionStatistics() {
           : t.status === 'in_progress' ? 'En atención'
           : 'En espera',
         t.waitSec ?? '—',
+        t.durationSec ?? '—',
       ];
     });
     const wsDetail = XLSX.utils.aoa_to_sheet([detailHeader, ...detailRows]);
     wsDetail['!cols'] = [
       { wch: 10 }, { wch: 7 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 }
     ];
     XLSX.utils.book_append_sheet(wb, wsDetail, 'Detalle de Tickets');
 
@@ -797,16 +809,17 @@ function SectionStatistics() {
       r.attended.toString(),
       r.unattended.toString(),
       r.pending.toString(),
-      fmtSec(r.avgWaitSec)
+      fmtSec(r.avgWaitSec),
+      fmtSec(r.avgDurationSec)
     ]);
     
     if (rows.length > 0) {
-      tableData.push(['TOT', 'TOTALES', totalTickets.toString(), totalAttended.toString(), totalUnattended.toString(), totalPending.toString(), fmtSec(avgWaitAll)]);
+      tableData.push(['TOT', 'TOTALES', totalTickets.toString(), totalAttended.toString(), totalUnattended.toString(), totalPending.toString(), fmtSec(avgWaitAll), fmtSec(avgDurationAll)]);
     }
 
     autoTable(doc, {
       startY: 54,
-      head: [['Letra', 'Servicio', 'Emitidos', 'Atendidos', 'No Atend.', 'Espera', 'T. Promedio']],
+      head: [['Letra', 'Servicio', 'Emitidos', 'Atendidos', 'No Atend.', 'Espera', 'T. Prom. Esp', 'T. Prom. Aten']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [17, 24, 39] },
@@ -932,8 +945,8 @@ function SectionStatistics() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={22} height={22}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
           <div className="adm-kpi-body">
-            <div className="adm-kpi-label">Prom. de Espera</div>
-            <div className="adm-kpi-value">{fmtSec(avgWaitAll)}</div>
+            <div className="adm-kpi-label">Prom. de Atención</div>
+            <div className="adm-kpi-value">{fmtSec(avgDurationAll)}</div>
             <div className="adm-kpi-sub">{totalPending > 0 ? `${totalPending} en espera ahora` : 'Cola vacía'}</div>
           </div>
         </div>
@@ -959,7 +972,7 @@ function SectionStatistics() {
                   <th className="text-right">ATENDIDOS</th>
                   <th className="text-right">NO ATENDIDOS</th>
                   <th className="text-right">EN ESPERA</th>
-                  <th className="text-right">PROM. ESPERA</th>
+                  <th className="text-right">PROM. ATENCIÓN</th>
                   <th></th>
                 </tr>
               </thead>
@@ -990,7 +1003,7 @@ function SectionStatistics() {
                         ? <span className="adm-pending-badge">{row.pending}</span>
                         : <span className="adm-zero">0</span>}
                       </td>
-                      <td className="text-right adm-td-num">{fmtSec(row.avgWaitSec)}</td>
+                      <td className="text-right adm-td-num">{fmtSec(row.avgDurationSec)}</td>
                       <td>
                         <div className="adm-progress-bar">
                           <div className="adm-progress-fill" style={{ width: `${pct}%`, background: color }} />
@@ -1013,6 +1026,51 @@ function SectionStatistics() {
             </div>
           </div>
           <DonutChart slices={pieSlices.length > 0 ? pieSlices : [{ label: 'Sin datos', value: 1, color: '#e2e8f0' }]} />
+        </div>
+      </div>
+
+      {/* ── Tabla por Operador ──────────────────────────────────────── */}
+      <div className="adm-stats-grid" style={{ marginTop: '24px' }}>
+        <div className="adm-card adm-stats-table-card" style={{ gridColumn: '1 / -1' }}>
+          <div className="adm-card-header">
+            <div>
+              <div className="adm-card-title">Estadísticas por Operador</div>
+              <div className="adm-card-sub">Rendimiento individual</div>
+            </div>
+          </div>
+          <div className="adm-table-wrap">
+            <table className="adm-table adm-stats-tbl">
+              <thead>
+                <tr>
+                  <th>OPERADOR</th>
+                  <th className="text-right">ATENDIDOS</th>
+                  <th className="text-right">PROM. ESPERA</th>
+                  <th className="text-right">PROM. ATENCIÓN</th>
+                </tr>
+              </thead>
+              <tbody>
+                {operatorRows.length === 0 && !loading && (
+                  <tr><td colSpan={4} className="adm-td-empty">
+                    Sin datos de operadores para el período
+                  </td></tr>
+                )}
+                {loading && (
+                  <tr><td colSpan={4} className="adm-td-empty">Cargando datos…</td></tr>
+                )}
+                {operatorRows.map((row) => {
+                  const op = operators.find(o => o.id === row.operatorId);
+                  return (
+                    <tr key={row.operatorId}>
+                      <td style={{ fontWeight: 600 }}>{op ? op.fullName : row.operatorId}</td>
+                      <td className="text-right adm-td-num">{row.attended}</td>
+                      <td className="text-right adm-td-num">{fmtSec(row.avgWaitSec)}</td>
+                      <td className="text-right adm-td-num" style={{ color: '#005ce6', fontWeight: 600 }}>{fmtSec(row.avgDurationSec)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

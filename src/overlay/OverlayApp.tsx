@@ -74,7 +74,7 @@ export default function OverlayApp() {
     return () => window.clearTimeout(handle);
   }, [commentDraft, state.currentTicket?.id]);
 
-  const act = async (action: 'next' | 'recall' | 'pause' | 'finish') => {
+  const act = async (action: 'next' | 'recall' | 'pause' | 'finish' | 'start_attention') => {
     const t = state.currentTicket;
 
     // Bloquear SIGUIENTE o FINALIZAR si no hay comentario escrito
@@ -114,13 +114,14 @@ export default function OverlayApp() {
   };
 
   const ticket = state.currentTicket;
+  const isCalled = ticket?.status === 'called';
   const isPaused = !resuming && ticket?.status === 'paused';
   // Si pauseReason es null (dato legado sin motivo), tratar como 'lunch' por defecto
   const pauseReason: PauseReason = (ticket?.pauseReason ?? 'lunch') as PauseReason;
 
   const pausePillLabel = isPaused
     ? (pauseReason === 'bathroom' ? 'EN EL BAÑO' : 'EN COLACIÓN')
-    : 'EN ATENCIÓN';
+    : (isCalled ? 'LLAMADO' : 'EN ATENCIÓN');
 
   return (
     <div className="oa-root">
@@ -210,7 +211,7 @@ export default function OverlayApp() {
             <div className="oa-card-label">RECALL</div>
           </button>
 
-          <button className="oa-card-btn pause" onClick={() => act('pause')} disabled={!!loading || !ticket}>
+          <button className="oa-card-btn pause" onClick={() => act('pause')} disabled={!!loading || !ticket || isCalled}>
             <div className="oa-card-icon">
               {loading === 'pause' ? <span className="oa-spin pause-spin" /> : isPaused ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
@@ -225,16 +226,29 @@ export default function OverlayApp() {
             <div className="oa-card-label">{isPaused ? 'REANUDAR' : 'PAUSAR'}</div>
           </button>
 
-          <button className="oa-card-btn finish" onClick={() => act('finish')} disabled={!!loading || !ticket}>
-            <div className="oa-card-icon">
-              {loading === 'finish' ? <span className="oa-spin finish-spin" /> : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              )}
-            </div>
-            <div className="oa-card-label">FINALIZAR</div>
-          </button>
+          {isCalled ? (
+            <button className="oa-card-btn start-attention" onClick={() => act('start_attention')} disabled={!!loading || !ticket}>
+              <div className="oa-card-icon">
+                {loading === 'start_attention' ? <span className="oa-spin start-spin" /> : (
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                )}
+              </div>
+              <div className="oa-card-label">INICIAR ATENCIÓN</div>
+            </button>
+          ) : (
+            <button className="oa-card-btn finish" onClick={() => act('finish')} disabled={!!loading || !ticket}>
+              <div className="oa-card-icon">
+                {loading === 'finish' ? <span className="oa-spin finish-spin" /> : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <div className="oa-card-label">FINALIZAR</div>
+            </button>
+          )}
         </div>
 
         {/* Aviso: no hay comentario */}

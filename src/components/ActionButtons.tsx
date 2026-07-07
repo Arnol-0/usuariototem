@@ -97,6 +97,13 @@ export default function ActionButtons({ isPaused, onResume, onResumed }: ActionB
     setLoading(null);
   };
 
+  // ── Start Attention ──────────────────────────────────────────────────────────
+  const actStartAttention = async () => {
+    setLoading('start_attention');
+    await dispatch({ action: 'start_attention' });
+    setLoading(null);
+  };
+
   /* ── Vista pausado ── */
   if (isPaused) {
     return (
@@ -117,6 +124,8 @@ export default function ActionButtons({ isPaused, onResume, onResumed }: ActionB
       </div>
     );
   }
+
+  const isCalled = ticket?.status === 'called';
 
   return (
     <div className="ab-wrapper">
@@ -149,18 +158,28 @@ export default function ActionButtons({ isPaused, onResume, onResumed }: ActionB
         {/* Pausar */}
         <button className="ab-btn ab-pause"
           onClick={() => setShowPauseModal(true)}
-          disabled={!!loading}>
+          disabled={!!loading || isCalled}>
           {loading === 'pause' ? <span className="ab-spinner ab-spinner--dark" /> : <PauseCircle size={20} strokeWidth={2} />}
           <span>Pausar</span>
         </button>
 
-        {/* Finalizar — span 3 columnas, abre modal con comentario obligatorio */}
-        <button className="ab-btn ab-finish ab-finish-wide"
-          onClick={() => { setFinishComment(comment); setFinishCommentWarn(false); setShowFinishModal(true); }}
-          disabled={!!loading || !ticket}>
-          {loading === 'finish' ? <span className="ab-spinner ab-spinner--light" /> : <CheckCircle size={20} strokeWidth={2} />}
-          <span>Finalizar turno</span>
-        </button>
+        {/* Finalizar o Iniciar Atención */}
+        {isCalled ? (
+          <button className="ab-btn ab-start-attention ab-finish-wide"
+            style={{ background: '#007bff', color: '#fff' }}
+            onClick={actStartAttention}
+            disabled={!!loading}>
+            {loading === 'start_attention' ? <span className="ab-spinner ab-spinner--light" /> : <PlayCircle size={20} strokeWidth={2} />}
+            <span>Iniciar Atención</span>
+          </button>
+        ) : (
+          <button className="ab-btn ab-finish ab-finish-wide"
+            onClick={() => { setFinishComment(comment); setFinishCommentWarn(false); setShowFinishModal(true); }}
+            disabled={!!loading || !ticket}>
+            {loading === 'finish' ? <span className="ab-spinner ab-spinner--light" /> : <CheckCircle size={20} strokeWidth={2} />}
+            <span>Finalizar turno</span>
+          </button>
+        )}
 
       </div>
 

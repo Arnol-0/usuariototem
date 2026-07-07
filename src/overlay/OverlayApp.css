@@ -292,7 +292,11 @@
 .oa-card-btn.pause { background: #e6f7ee; color: #1a4a30; }
 .oa-card-btn.pause .oa-card-icon { background: rgba(255,255,255,0.6); color: #00a85c; }
 
-/* Finalizar — azul intenso (parecido al estilo del sistema) */
+/* Iniciar Atención — azul brillante */
+.oa-card-btn.start-attention { background: #e0edff; color: #004ecc; }
+.oa-card-btn.start-attention .oa-card-icon { background: #007bff; color: #fff; }
+
+/* Finalizar — azul oscuro (parecido al estilo del sistema) */
 .oa-card-btn.finish { background: #e0edff; color: #004ecc; }
 .oa-card-btn.finish .oa-card-icon { background: rgba(255,255,255,0.7); color: #005ce6; }
 
@@ -331,6 +335,7 @@
 }
 .oa-spin.recall-spin { border-top-color: #00904d; border-color: rgba(0,0,0,0.10); }
 .oa-spin.pause-spin  { border-top-color: #00a85c; border-color: rgba(0,0,0,0.10); }
+.oa-spin.start-spin  { border-top-color: #fff; border-color: rgba(255,255,255,0.3); }
 .oa-spin.finish-spin { border-top-color: #005ce6; border-color: rgba(0,0,0,0.10); }
 
 @keyframes oa-spin { to { transform: rotate(360deg); } }
