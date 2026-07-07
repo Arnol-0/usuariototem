@@ -107,6 +107,13 @@ export default function ActionButtons({ isPaused, onResume, onResumed }: ActionB
           {loading === 'pause' ? <span className="ab-spinner" /> : <PlayCircle size={22} strokeWidth={2} />}
           <span>Reanudar</span>
         </button>
+
+        <button className="ab-btn ab-finish ab-finish-wide"
+          onClick={() => { setFinishComment(comment); setFinishCommentWarn(false); setShowFinishModal(true); }}
+          disabled={!!loading || !ticket}>
+          {loading === 'finish' ? <span className="ab-spinner ab-spinner--light" /> : <CheckCircle size={20} strokeWidth={2} />}
+          <span>Finalizar turno</span>
+        </button>
       </div>
     );
   }

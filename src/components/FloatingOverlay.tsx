@@ -123,9 +123,9 @@ export default function FloatingOverlay() {
           className="fo-btn finish"
           disabled={!!loading}
           onClick={() => act('finish')}
-          title="Finalizar"
+          title="Finalizar turno"
         >
-          {loading === 'finish' ? '…' : '✔ Finalizar'}
+          {loading === 'finish' ? '…' : '✔ Finalizar turno'}
         </button>
       </div>
 

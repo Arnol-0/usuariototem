@@ -74,11 +74,11 @@ export default function OverlayApp() {
     return () => window.clearTimeout(handle);
   }, [commentDraft, state.currentTicket?.id]);
 
-  const act = async (action: 'next' | 'recall' | 'pause') => {
+  const act = async (action: 'next' | 'recall' | 'pause' | 'finish') => {
     const t = state.currentTicket;
 
-    // Bloquear SIGUIENTE si no hay comentario escrito
-    if (action === 'next' && commentDraft.trim() === '') {
+    // Bloquear SIGUIENTE o FINALIZAR si no hay comentario escrito
+    if ((action === 'next' || action === 'finish') && commentDraft.trim() === '') {
       setNoCommentWarn(true);
       setTimeout(() => setNoCommentWarn(false), 3500);
       return;
@@ -210,7 +210,7 @@ export default function OverlayApp() {
             <div className="oa-card-label">RECALL</div>
           </button>
 
-          <button className="oa-card-btn pause oa-card-btn--wide" onClick={() => act('pause')} disabled={!!loading || !ticket}>
+          <button className="oa-card-btn pause" onClick={() => act('pause')} disabled={!!loading || !ticket}>
             <div className="oa-card-icon">
               {loading === 'pause' ? <span className="oa-spin pause-spin" /> : isPaused ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
@@ -223,6 +223,17 @@ export default function OverlayApp() {
               )}
             </div>
             <div className="oa-card-label">{isPaused ? 'REANUDAR' : 'PAUSAR'}</div>
+          </button>
+
+          <button className="oa-card-btn finish" onClick={() => act('finish')} disabled={!!loading || !ticket}>
+            <div className="oa-card-icon">
+              {loading === 'finish' ? <span className="oa-spin finish-spin" /> : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+            </div>
+            <div className="oa-card-label">FINALIZAR</div>
           </button>
         </div>
 

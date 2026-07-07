@@ -238,7 +238,7 @@ export async function rtdbMarkCalled(
 export async function rtdbMarkFinished(
   codServicio:  string,
   idx:          number,
-  status:       'atendido' | 'transferido',
+  status:       'atendido' | 'transferido' | 'no_atendido',
   ticket:       RtdbTicket,
   llamadoEn:    number,
 ): Promise<void> {
@@ -261,7 +261,7 @@ export async function rtdbMarkFinished(
     issuedAt:   new Date(ticket.timestamp),
     calledAt:   llamadoEn ? new Date(llamadoEn) : null,
     finishedAt: new Date(ahora),
-    status:     status === 'atendido' ? 'finished' : 'transferred',
+    status:     status === 'atendido' ? 'finished' : (status === 'transferido' ? 'transferred' : 'skipped'),
     stationId:  _stationId,
     operatorId: _operatorId,
     waitSec:    esperaSeg,

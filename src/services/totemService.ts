@@ -246,7 +246,8 @@ export async function sendAction(payload: ActionPayload): Promise<void> {
         }).catch(console.error);
         // Notifica al RTDB que este turno fue descartado
         if (t._codServicio && t._rtdbIdx !== undefined) {
-          rtdbMarkFinished(t._codServicio, t._rtdbIdx, 'atendido', _current as any, Date.now())
+          const rtdbStatus = (payload.skipReason === 'no_show' || payload.skipReason === 'other') ? 'no_atendido' : 'atendido';
+          rtdbMarkFinished(t._codServicio, t._rtdbIdx, rtdbStatus, _current as any, Date.now())
             .catch(console.error);
         }
       }
